@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Power Connection — Domino Circuit Puzzle</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23070d13'/%3E%3Cpath d='M13 2 4 14h6l-1 8 9-12h-6l1-8Z' fill='%2338e1ff'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="bg-layer" aria-hidden="true"></div>
+
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-bolt" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="currentColor"/></svg>
+      </span>
+      <div class="brand-text">
+        <h1>Power Connection</h1>
+        <p id="brandSub">Domino circuit puzzle</p>
+      </div>
+    </div>
+
+    <div class="topbar-meta">
+      <div class="chip"><span class="chip-k">Level</span><span class="chip-v" id="chipLevel">—</span></div>
+      <div class="chip"><span class="chip-k">Boneyard</span><span class="chip-v" id="chipBoneyard">—</span></div>
+      <div class="chip"><span class="chip-k">Circuit</span><span class="chip-v" id="chipCircuit">—</span></div>
+    </div>
+
+    <div class="topbar-actions">
+      <button class="btn ghost small" id="btnHow" type="button">How to Play</button>
+      <button class="btn ghost small icon" id="btnSound" type="button" aria-label="Toggle sound" title="Toggle sound">🔊</button>
+      <button class="btn ghost small" id="btnMenu" type="button">Menu</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="board-panel">
+      <div class="board-frame">
+        <span class="bracket tl" aria-hidden="true"></span>
+        <span class="bracket tr" aria-hidden="true"></span>
+        <span class="bracket bl" aria-hidden="true"></span>
+        <span class="bracket br" aria-hidden="true"></span>
+        <div id="board" class="board" role="grid" aria-label="13 by 13 circuit board">
+          <div id="tileLayer" class="tile-layer"></div>
+        </div>
+      </div>
+
+      <div class="board-status">
+        <span class="status-led" aria-hidden="true"></span>
+        <span id="statusHint">Initialize the circuit to begin.</span>
+      </div>
+
+      <div class="legend">
+        <span class="legend-item"><i class="sw source"></i>Power Source</span>
+        <span class="legend-item"><i class="sw appliance"></i>Appliance</span>
+        <span class="legend-item"><i class="sw obstacle"></i>Obstacle</span>
+        <span class="legend-item"><i class="sw powered"></i>Powered</span>
+        <span class="legend-item"><i class="sw blank"></i>Blank = wild</span>
+      </div>
+    </section>
+
+    <aside class="sidebar">
+      <div class="card turn-card">
+        <div class="turn-head">
+          <span class="turn-pulse" aria-hidden="true"></span>
+          <div class="turn-id">
+            <div class="turn-name" id="turnName">—</div>
+            <div class="turn-sub" id="turnSub">Ready</div>
+          </div>
+          <div class="turn-count"><strong id="handCount">0</strong><span>tiles</span></div>
+        </div>
+        <div class="power-bar"><div class="power-bar-fill" id="powerFill"></div></div>
+        <div class="power-label"><span>Appliances powered</span><span id="powerText">0/0</span></div>
+      </div>
+
+      <div class="card hand-card">
+        <div class="card-head">
+          <h2>Your hand</h2>
+          <span class="kbd-hint">R rotate · 1–5 select</span>
+        </div>
+        <div class="hand-wrap">
+          <div class="hand-grid" id="handGrid"></div>
+          <div class="hand-cover" id="handCover" hidden>
+            <span class="cover-label">Hand hidden</span>
+            <p id="handCoverText">Pass the device to the next player.</p>
+            <button class="btn primary small" id="btnReveal" type="button">Reveal my hand</button>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="btnRotate" type="button">Rotate ⟳</button>
+          <button class="btn" id="btnDraw" type="button">Draw Tile</button>
+          <button class="btn" id="btnEnd" type="button">End Turn</button>
+        </div>
+      </div>
+
+      <div class="card score-card" id="scoreCard"></div>
+
+      <div class="card log-card">
+        <div class="card-head"><h2>System log</h2></div>
+        <ul class="log-list" id="logList"></ul>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="foot">
+    <span>Click a domino, then hover the grid to preview and click to place.</span>
+    <span class="foot-keys"><kbd>R</kbd> rotate <kbd>D</kbd> draw <kbd>E</kbd> end turn <kbd>Esc</kbd> deselect</span>
+  </footer>
+</div>
+
+<!-- ============================ SETUP SCREEN ============================ -->
+<div class="screen" id="setupScreen" hidden>
+  <div class="screen-card">
+    <div class="screen-head">
+      <span class="logo-bolt" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="currentColor"/></svg>
+      </span>
+      <h2>Power Connection</h2>
+      <p>Trace the current. Every appliance on the board must be wired back to the power core before a player can go out.</p>
+    </div>
+
+    <div class="setup-grid">
+      <div class="setup-col">
+        <h3 class="mini-head">Game mode</h3>
+        <div class="seg" id="modeSeg">
+          <button type="button" data-mode="solo" class="active">Solo Puzzle</button>
+          <button type="button" data-mode="multi">Pass &amp; Play</button>
+        </div>
+
+        <div id="multiOpts" hidden>
+          <h3 class="mini-head">Players</h3>
+          <div class="seg small" id="countSeg">
+            <button type="button" data-count="2" class="active">2</button>
+            <button type="button" data-count="3">3</button>
+            <button type="button" data-count="4">4</button>
+          </div>
+          <div class="name-list" id="nameList"></div>
+        </div>
+
+        <p class="setup-note" id="modeNote"></p>
+      </div>
+
+      <div class="setup-col">
+        <h3 class="mini-head">Level</h3>
+        <div class="level-rail" id="levelRail"></div>
+        <div class="level-preview" id="levelPreview"></div>
+      </div>
+    </div>
+
+    <div class="screen-actions">
+      <button class="btn primary big" id="btnStart" type="button">Initialize Circuit ▸</button>
+      <button class="btn ghost" id="btnHow2" type="button">How to Play</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ RESULT SCREEN ============================ -->
+<div class="screen" id="resultScreen" hidden>
+  <div class="screen-card result-card" id="resultBody"></div>
+</div>
+
+<!-- ============================ HOW TO PLAY ============================ -->
+<div class="screen" id="howModal" hidden>
+  <div class="screen-card how-card">
+    <div class="how-head">
+      <h2>How to Play</h2>
+      <button class="btn ghost small icon" id="btnHowClose" type="button" aria-label="Close">✕</button>
+    </div>
+
+    <div class="how-body">
+      <details open>
+        <summary>Objective</summary>
+        <p>The grid holds one <strong>Power Source</strong>, a set of <strong>Appliance</strong> nodes and a few <strong>Obstacle</strong> blocks. Build domino chains out from the source until every appliance is lit. You may only go out (empty your hand) once the whole circuit is powered.</p>
+      </details>
+
+      <details>
+        <summary>Placing dominoes</summary>
+        <ul>
+          <li>A domino covers <strong>two adjacent cells</strong>, horizontally or vertically.</li>
+          <li>At least one of its halves must sit <strong>orthogonally next to a placed tile</strong> with the <strong>same pip count</strong>.</li>
+          <li>Only one matching edge is required — the domino may also touch tiles it does not match.</li>
+          <li>Obstacle blocks and occupied cells can never be used.</li>
+        </ul>
+      </details>
+
+      <details>
+        <summary>Blanks are wild</summary>
+        <p>Any half showing <strong>0</strong> is wild: it accepts a neighbour of any value. When you place it, declare the value it displays (or leave it wild). Its wild nature is permanent, so blanks make excellent bridges.</p>
+      </details>
+
+      <details>
+        <summary>Doubles are junctions</summary>
+        <p>A double (0-0, 1-1 … 6-6) has the same count on both halves, so both halves accept the same values and tiles can branch off in several directions. That is how the circuit spreads.</p>
+      </details>
+
+      <details>
+        <summary>Turns, drawing and passing</summary>
+        <ol>
+          <li>Place one domino, or</li>
+          <li>If you have no legal move, click <strong>Draw Tile</strong>. You draw exactly one tile.</li>
+          <li>If the drawn tile is playable you may play it immediately; otherwise click <strong>End Turn</strong>.</li>
+          <li>If the boneyard is empty and you cannot move, you must pass.</li>
+        </ol>
+      </details>
+
+      <details>
+        <summary>Going out and winning</summary>
+        <ul>
+          <li><strong>Solo:</strong> empty your hand while every appliance is powered. Score = tiles still left in the boneyard. If you empty your hand too early, you must draw one tile.</li>
+          <li><strong>Pass &amp; Play:</strong> the first player to go out with the circuit complete ends the level. Everyone else scores the pips left in their hand — a blank counts as <strong>10</strong> penalty points. Lowest cumulative total across levels wins.</li>
+          <li>If the boneyard is empty and nobody can move, the circuit stalls and the level ends.</li>
+        </ul>
+      </details>
+
+      <details>
+        <summary>Controls</summary>
+        <table class="keys-table">
+          <tr><td><kbd>Click tile</kbd></td><td>Select a domino (click it again to rotate)</td></tr>
+          <tr><td><kbd>R</kbd></td><td>Rotate the selected domino</td></tr>
+          <tr><td><kbd>Click cell</kbd></td><td>Place the domino with its top-left half on that cell</td></tr>
+          <tr><td><kbd>1</kbd>–<kbd>5</kbd></td><td>Select a hand slot</td></tr>
+          <tr><td><kbd>D</kbd></td><td>Draw a tile</td></tr>
+          <tr><td><kbd>E</kbd></td><td>End your turn</td></tr>
+          <tr><td><kbd>Esc</kbd></td><td>Deselect / close dialogs</td></tr>
+        </table>
+      </details>
+
+      <details>
+        <summary>Tips</summary>
+        <ul>
+          <li>Place a horizontal domino by clicking its left cell; a vertical one by clicking its top cell. Rotate to fit tight corners.</li>
+          <li>Green cells when a tile is selected are legal anchors — useful on touch screens.</li>
+          <li>Keep a blank or a double in reserve to jump a pip gap near an appliance.</li>
+          <li>Power flows only through matching pips, so a chain that touches an appliance on the wrong value stays dark.</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ WILD MODAL ============================ -->
+<div class="screen" id="wildModal" hidden>
+  <div class="screen-card modal-card">
+    <h2>Declare blank value</h2>
+    <p class="modal-lead">A blank half is wild and matches any pip. Choose the value it displays on the board, or leave it wild.</p>
+    <div id="wildRows"></div>
+    <div class="screen-actions">
+      <button class="btn ghost" id="wildCancel" type="button">Cancel</button>
+      <button class="btn primary" id="wildConfirm" type="button">Place domino</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
